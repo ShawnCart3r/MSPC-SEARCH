@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Search Directory</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2em;
+      background: #f4f4f4;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .entry {
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .entry a:not(.contact-btn) {
+      text-decoration: none;
+      color: #0077cc;
+    }
+    .type-label {
+      font-size: 12px;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .contact-btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 6px 12px;
+      background-color: #0077cc;
+      color: white !important;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      text-decoration: none;
+    }
+    .contact-btn:hover {
+      background-color: #005fa3;
+    }
+    #results:empty {
+      display: none;
+    }
+    #noResults {
+      display: none;
+      color: #777;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Search Providers & Doctors</h1>
+  <input type="text" id="searchInput" placeholder="Start typing to search...">
+  <div id="results"></div>
+  <p id="noResults">No matches found.</p>
+
+  <script>
+   const apiURL = 'https://script.google.com/macros/s/AKfycbxWLNS696tAzZWQskTkxkTfMyRzOIM-lweGUeWEkqEc6ZXI9sQPY6PYsyadD3dZoQjwUA/exec';
+
+    const resultsDiv = document.getElementById('results');
+    const searchInput = document.getElementById('searchInput');
+    const noResults = document.getElementById('noResults');
+    let directory = [];
+
+    function fetchAndRender() {
+  fetch(apiURL)
+    .then(res => res.json())
+    .then(data => {
+      directory = data.map(row => ({
+  type: "doctor",
+  name: `${row["First Name"] || ''} ${row["Last Name"] || ''}`,
+  title: row["Medical Profession"] || '',
+  phone: row["Phone"] || '',
+  city: row["State"] || '',
+  insurance: row["Insurance Coverage"] || '',
+  url: ''
+}));
+      handleSearch(); // filter current input against new data
+    });
+}
+
+
+    function displayEntries(entries) {
+      resultsDiv.innerHTML = '';
+      noResults.style.display = entries.length ? 'none' : 'block';
+
+      entries.forEach(e => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+
+        let content = `<div class="type-label">${e.type.toUpperCase()}</div><strong>${e.name}</strong>`;
+        if (e.title) content += `<br>${e.title}`;
+        if (e.phone) content += `<br>📞 ${e.phone}`;
+        if (e.city) content += `<br>📍 ${e.city}`;
+        if (e.insurance) content += `<br>🛡️ ${e.insurance}`;
+
+        const subject = encodeURIComponent(`Contact Request for ${e.name}`);
+        const body = encodeURIComponent(`Hello,\n\nI would like to contact ${e.name}.\n\nThank you.`);
+        const contactLink = `mailto:shawncart3r@gmail.com?subject=${subject}&body=${body}`;
+        content += `<br><a class="contact-btn" href="${contactLink}">Contact</a>`;
+
+        div.innerHTML = content;
+        resultsDiv.appendChild(div);
+      });
+    }
+
+    function handleSearch() {
+      const query = searchInput.value.toLowerCase().trim();
+      const filtered = directory.filter(e =>
+        e.name.toLowerCase().includes(query) ||
+        e.title.toLowerCase().includes(query) ||
+        e.city.toLowerCase().includes(query) ||
+        e.insurance.toLowerCase().includes(query)
+      );
+      displayEntries(filtered);
+    }
+
+    searchInput.addEventListener('input', handleSearch);
+
+    // Fetch data every 30 seconds to update automatically
+    fetchAndRender();
+    setInterval(fetchAndRender, 30000);
+  </script>
+
+</body>
+</html>
